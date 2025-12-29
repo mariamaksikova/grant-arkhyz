@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест форм</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест работы форм</h1>
+    
+    <div class="test-section">
+        <h2>Тест 1: Проверка доступности сервера</h2>
+        <button onclick="testServer()">Проверить сервер</button>
+        <div id="server-log" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Тест 2: Отправка отзыва</h2>
+        <button onclick="testReview()">Отправить тестовый отзыв</button>
+        <div id="review-log" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Тест 3: Отправка бронирования</h2>
+        <button onclick="testBooking()">Отправить тестовое бронирование</button>
+        <div id="booking-log" class="log"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        function log(elementId, message) {
+            const logEl = document.getElementById(elementId);
+            const time = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${time}] ${message}<br>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function testServer() {
+            const logEl = document.getElementById('server-log');
+            logEl.innerHTML = '';
+            
+            log('server-log', 'Проверка сервера...');
+            
+            try {
+                const response = await fetch('/api/bookings');
+                log('server-log', `Статус: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('server-log', `✓ Сервер доступен. Записей: ${data.data ? data.data.length : 0}`);
+                } else {
+                    log('server-log', `✗ Ошибка: ${response.status}`);
+                }
+            } catch (error) {
+                log('server-log', `✗ Ошибка: ${error.message}`);
+            }
+        }
+
+        async function testReview() {
+            const logEl = document.getElementById('review-log');
+            logEl.innerHTML = '';
+            
+            log('review-log', 'Отправка тестового отзыва...');
+            
+            const formData = {
+                type: 'review',
+                name: 'Тестовый пользователь',
+                email: 'test@example.com',
+                text: 'Это тестовый отзыв для проверки работы системы',
+                timestamp: new Date().toISOString()
+            };
+            
+            log('review-log', `Данные: ${JSON.stringify(formData)}`);
+            
+            try {
+                const response = await fetch('/api/submit-form', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                log('review-log', `Статус: ${response.status}`);
+                
+                const result = await response.json();
+                log('review-log', `Результат: ${JSON.stringify(result)}`);
+                
+                if (result.success) {
+                    log('review-log', '✓ Отзыв успешно отправлен!');
+                } else {
+                    log('review-log', `✗ Ошибка: ${result.error}`);
+                }
+            } catch (error) {
+                log('review-log', `✗ Ошибка: ${error.message}`);
+            }
+        }
+
+        async function testBooking() {
+            const logEl = document.getElementById('booking-log');
+            logEl.innerHTML = '';
+            
+            log('booking-log', 'Отправка тестового бронирования...');
+            
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dayAfter = new Date();
+            dayAfter.setDate(dayAfter.getDate() + 3);
+            
+            const formData = {
+                type: 'booking',
+                bookingType: 'одноместный номер',
+                name: 'Тестовый пользователь',
+                phone: '+79991234567',
+                email: 'test@example.com',
+                checkIn: tomorrow.toISOString().split('T')[0],
+                checkOut: dayAfter.toISOString().split('T')[0],
+                bathhouse: false,
+                message: 'Тестовое бронирование',
+                timestamp: new Date().toISOString()
+            };
+            
+            log('booking-log', `Данные: ${JSON.stringify(formData)}`);
+            
+            try {
+                const response = await fetch('/api/submit-form', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                log('booking-log', `Статус: ${response.status}`);
+                
+                const result = await response.json();
+                log('booking-log', `Результат: ${JSON.stringify(result)}`);
+                
+                if (result.success) {
+                    log('booking-log', '✓ Бронирование успешно отправлено!');
+                } else {
+                    log('booking-log', `✗ Ошибка: ${result.error}`);
+                }
+            } catch (error) {
+                log('booking-log', `✗ Ошибка: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
+
