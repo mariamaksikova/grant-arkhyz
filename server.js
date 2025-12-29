@@ -10,6 +10,13 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Главная страница - перенаправление на старт продаж (должно быть ДО express.static)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'start-sales.html'));
+});
+
+// Статические файлы
 app.use(express.static('.'));
 
 // Инициализация базы данных
