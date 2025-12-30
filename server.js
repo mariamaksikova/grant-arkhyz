@@ -335,13 +335,15 @@ app.listen(PORT, () => {
     console.log('='.repeat(50));
     console.log(`✓ Сервер запущен на http://localhost:${PORT}`);
     console.log(`✓ База данных: PostgreSQL`);
-    console.log(`✓ DATABASE_URL: ${process.env.DATABASE_URL ? 'установлен' : 'НЕ УСТАНОВЛЕН!'}`);
+    console.log(`✓ DATABASE_URL: ${process.env.DATABASE_URL ? '✓ установлен' : '✗ НЕ УСТАНОВЛЕН!'}`);
     if (process.env.NODE_ENV === 'production') {
         console.log(`✓ Режим: Production`);
         console.log(`✓ Админка защищена (username: ${ADMIN_USERNAME})`);
+    } else {
+        console.log(`✓ Режим: Development`);
     }
     console.log('='.repeat(50));
-    console.log('\nОжидание запросов...\n');
+    console.log('\n✓ Ожидание запросов...\n');
 });
 
 // Graceful shutdown
