@@ -65,8 +65,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.error('Ошибка подключения к базе данных:', err.message);
         console.error('Путь к базе данных:', dbPath);
     } else {
-        console.log('Подключено к базе данных SQLite');
-        console.log('Путь к базе данных:', dbPath);
+        console.log('✓ Подключено к базе данных SQLite');
+        console.log('✓ Путь к базе данных:', dbPath);
+        console.log('✓ Режим:', isProduction ? 'PRODUCTION (персистентный диск)' : 'DEVELOPMENT (локальный)');
         initDatabase();
     }
 });
