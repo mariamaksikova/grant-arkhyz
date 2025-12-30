@@ -49,12 +49,24 @@ app.get('/ping', (req, res) => {
 app.use(express.static('.'));
 
 // Инициализация базы данных
-const dbPath = path.join(__dirname, 'database.db');
+// Используем персистентный диск для production (Render.com)
+// В production используем /opt/render/project/src/data, в development - текущую директорию
+const isProduction = process.env.NODE_ENV === 'production';
+const dbDir = isProduction ? '/opt/render/project/src/data' : __dirname;
+const dbPath = path.join(dbDir, 'database.db');
+
+// Создаем директорию, если её нет
+if (isProduction && !fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Ошибка подключения к базе данных:', err.message);
+        console.error('Путь к базе данных:', dbPath);
     } else {
         console.log('Подключено к базе данных SQLite');
+        console.log('Путь к базе данных:', dbPath);
         initDatabase();
     }
 });
