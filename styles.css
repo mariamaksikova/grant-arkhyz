@@ -790,6 +790,10 @@ body {
     padding-top: 40px;
 }
 
+.map-container {
+    padding-top: 40px;
+}
+
 .contacts-left h2 {
     font-size: 36px;
     margin-bottom: 50px;
