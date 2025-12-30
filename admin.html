@@ -778,7 +778,7 @@
             // Проверяем, есть ли сохраненная вкладка в localStorage
             const savedTab = localStorage.getItem('adminCurrentTab') || 'bookings';
             currentTab = savedTab;
-            
+
             // Активируем сохраненную вкладку
             document.querySelectorAll('.admin-tab').forEach(tab => {
                 if (tab.getAttribute('data-tab') === savedTab) {
@@ -787,7 +787,7 @@
                     tab.classList.remove('active');
                 }
             });
-            
+
             document.querySelectorAll('.admin-content').forEach(content => {
                 if (content.id === savedTab + '-content') {
                     content.classList.add('active');
@@ -795,14 +795,14 @@
                     content.classList.remove('active');
                 }
             });
-            
+
             loadData(savedTab);
         });
-        
+
         // Сохраняем текущую вкладку при переключении
         document.querySelectorAll('.admin-tab').forEach(tab => {
             const originalClick = tab.onclick;
-            tab.addEventListener('click', function() {
+            tab.addEventListener('click', function () {
                 const tabName = this.getAttribute('data-tab');
                 localStorage.setItem('adminCurrentTab', tabName);
             });
