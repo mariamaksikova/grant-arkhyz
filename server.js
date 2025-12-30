@@ -50,14 +50,31 @@ app.use(express.static('.'));
 
 // Инициализация базы данных
 // Используем персистентный диск для production (Render.com)
-// В production используем /opt/render/project/src, в development - текущую директорию
+// На Render.com диск монтируется в /opt/render/project/src
+// Используем подпапку data для базы данных
 const isProduction = process.env.NODE_ENV === 'production';
-const dbDir = isProduction ? '/opt/render/project/src' : __dirname;
+let dbDir;
+
+if (isProduction) {
+    // Проверяем, существует ли путь к диску
+    const diskPath = '/opt/render/project/src';
+    if (fs.existsSync(diskPath)) {
+        dbDir = path.join(diskPath, 'data');
+    } else {
+        // Если диск не найден, используем текущую директорию
+        console.warn('⚠ Персистентный диск не найден, используем текущую директорию');
+        dbDir = __dirname;
+    }
+} else {
+    dbDir = __dirname;
+}
+
 const dbPath = path.join(dbDir, 'database.db');
 
 // Создаем директорию, если её нет
-if (isProduction && !fs.existsSync(dbDir)) {
+if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
+    console.log('✓ Создана директория для базы данных:', dbDir);
 }
 
 const db = new sqlite3.Database(dbPath, (err) => {
