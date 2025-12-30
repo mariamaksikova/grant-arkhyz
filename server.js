@@ -223,6 +223,86 @@ app.get('/api/investments', (req, res) => {
     });
 });
 
+// API endpoint для удаления записи
+app.delete('/api/:type/:id', (req, res) => {
+    const { type, id } = req.params;
+    let tableName;
+    
+    if (type === 'bookings') tableName = 'bookings';
+    else if (type === 'reviews') tableName = 'reviews';
+    else if (type === 'investments') tableName = 'investments';
+    else {
+        return res.status(400).json({ success: false, error: 'Неизвестный тип' });
+    }
+    
+    db.run(`DELETE FROM ${tableName} WHERE id = ?`, [id], function(err) {
+        if (err) {
+            console.error(`Ошибка удаления ${type}:`, err.message);
+            return res.status(500).json({ success: false, error: 'Ошибка удаления данных' });
+        }
+        console.log(`✓ ${type} удален с ID: ${id}`);
+        res.json({ success: true, message: 'Запись удалена' });
+    });
+});
+
+// API endpoint для обновления записи
+app.put('/api/:type/:id', (req, res) => {
+    const { type, id } = req.params;
+    const data = req.body;
+    
+    try {
+        if (type === 'bookings') {
+            db.run(
+                `UPDATE bookings SET 
+                    booking_type = ?, name = ?, phone = ?, email = ?, 
+                    check_in = ?, check_out = ?, bathhouse = ?, message = ?
+                WHERE id = ?`,
+                [data.booking_type, data.name, data.phone, data.email, 
+                 data.check_in, data.check_out, data.bathhouse ? 1 : 0, data.message || '', id],
+                function(err) {
+                    if (err) {
+                        console.error('Ошибка обновления бронирования:', err.message);
+                        return res.status(500).json({ success: false, error: 'Ошибка обновления данных' });
+                    }
+                    console.log(`✓ Бронирование обновлено с ID: ${id}`);
+                    res.json({ success: true, message: 'Запись обновлена' });
+                }
+            );
+        } else if (type === 'reviews') {
+            db.run(
+                `UPDATE reviews SET name = ?, email = ?, text = ? WHERE id = ?`,
+                [data.name, data.email, data.text, id],
+                function(err) {
+                    if (err) {
+                        console.error('Ошибка обновления отзыва:', err.message);
+                        return res.status(500).json({ success: false, error: 'Ошибка обновления данных' });
+                    }
+                    console.log(`✓ Отзыв обновлен с ID: ${id}`);
+                    res.json({ success: true, message: 'Запись обновлена' });
+                }
+            );
+        } else if (type === 'investments') {
+            db.run(
+                `UPDATE investments SET name = ?, phone = ? WHERE id = ?`,
+                [data.name, data.phone, id],
+                function(err) {
+                    if (err) {
+                        console.error('Ошибка обновления заявки на инвестиции:', err.message);
+                        return res.status(500).json({ success: false, error: 'Ошибка обновления данных' });
+                    }
+                    console.log(`✓ Заявка на инвестиции обновлена с ID: ${id}`);
+                    res.json({ success: true, message: 'Запись обновлена' });
+                }
+            );
+        } else {
+            res.status(400).json({ success: false, error: 'Неизвестный тип' });
+        }
+    } catch (error) {
+        console.error('Ошибка обновления:', error);
+        res.status(500).json({ success: false, error: 'Внутренняя ошибка сервера' });
+    }
+});
+
 // Автоматический ping для предотвращения засыпания (каждые 4 минуты)
 if (process.env.NODE_ENV === 'production') {
     const SITE_URL = process.env.SITE_URL || 'https://grantarkhyz.onrender.com';
