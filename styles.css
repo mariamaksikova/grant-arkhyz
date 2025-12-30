@@ -836,10 +836,10 @@ body {
 
 .map-container h3 {
     color: var(--gold-color);
-    margin-bottom: 30px;
-    font-size: 24px;
+    margin-bottom: 50px;
+    font-size: 36px;
     font-weight: 300;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     text-align: left;
 }
 
@@ -1775,7 +1775,8 @@ body {
     
     .map-container h3 {
         text-align: left;
-        font-size: 20px;
+        font-size: 28px;
+        margin-bottom: 30px;
     }
     
     .map-wrapper iframe {
