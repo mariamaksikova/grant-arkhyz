@@ -1,8 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,105 +47,77 @@ app.get('/ping', (req, res) => {
 // Статические файлы
 app.use(express.static('.'));
 
-// Инициализация базы данных
-// Используем персистентный диск для production (Render.com)
-// На Render.com диск монтируется в /opt/render/project/src/data
-const isProduction = process.env.NODE_ENV === 'production';
-let dbDir;
+// Инициализация базы данных PostgreSQL
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
-if (isProduction) {
-    // Используем путь к персистентному диску
-    const diskPath = '/opt/render/project/src/data';
-    dbDir = diskPath;
-    
-    // Проверяем, существует ли путь к диску
-    if (!fs.existsSync(diskPath)) {
-        console.warn('⚠ Персистентный диск не найден по пути:', diskPath);
-        console.warn('⚠ Пробуем использовать текущую директорию');
-        dbDir = __dirname;
-    }
-} else {
-    dbDir = __dirname;
-}
+// Проверка подключения к базе данных
+pool.on('connect', () => {
+    console.log('✓ Подключено к базе данных PostgreSQL');
+    console.log('✓ Режим:', process.env.NODE_ENV === 'production' ? 'PRODUCTION' : 'DEVELOPMENT');
+    initDatabase();
+});
 
-const dbPath = path.join(dbDir, 'database.db');
-
-// Создаем директорию, если её нет
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-    console.log('✓ Создана директория для базы данных:', dbDir);
-}
-
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-        console.error('Ошибка подключения к базе данных:', err.message);
-        console.error('Путь к базе данных:', dbPath);
-    } else {
-        console.log('✓ Подключено к базе данных SQLite');
-        console.log('✓ Путь к базе данных:', dbPath);
-        console.log('✓ Режим:', isProduction ? 'PRODUCTION (персистентный диск)' : 'DEVELOPMENT (локальный)');
-        initDatabase();
-    }
+pool.on('error', (err) => {
+    console.error('❌ Ошибка подключения к базе данных:', err.message);
+    console.error('❌ DATABASE_URL:', process.env.DATABASE_URL ? 'установлен' : 'не установлен');
 });
 
 // Создание таблиц
-function initDatabase() {
-    // Таблица для бронирований
-    db.run(`CREATE TABLE IF NOT EXISTS bookings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT NOT NULL,
-        booking_type TEXT,
-        name TEXT NOT NULL,
-        phone TEXT NOT NULL,
-        email TEXT NOT NULL,
-        check_in TEXT,
-        check_out TEXT,
-        bathhouse INTEGER DEFAULT 0,
-        message TEXT,
-        timestamp TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`, (err) => {
-        if (err) {
-            console.error('Ошибка создания таблицы bookings:', err.message);
-        } else {
-            console.log('Таблица bookings готова');
-        }
-    });
+async function initDatabase() {
+    try {
+        // Таблица для бронирований
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS bookings (
+                id SERIAL PRIMARY KEY,
+                type VARCHAR(50) NOT NULL,
+                booking_type VARCHAR(50),
+                name VARCHAR(255) NOT NULL,
+                phone VARCHAR(50) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                check_in VARCHAR(50),
+                check_out VARCHAR(50),
+                bathhouse INTEGER DEFAULT 0,
+                message TEXT,
+                timestamp VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✓ Таблица bookings готова');
 
-    // Таблица для отзывов
-    db.run(`CREATE TABLE IF NOT EXISTS reviews (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        text TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`, (err) => {
-        if (err) {
-            console.error('Ошибка создания таблицы reviews:', err.message);
-        } else {
-            console.log('Таблица reviews готова');
-        }
-    });
+        // Таблица для отзывов
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS reviews (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                text TEXT NOT NULL,
+                timestamp VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✓ Таблица reviews готова');
 
-    // Таблица для инвестиций
-    db.run(`CREATE TABLE IF NOT EXISTS investments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        phone TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`, (err) => {
-        if (err) {
-            console.error('Ошибка создания таблицы investments:', err.message);
-        } else {
-            console.log('Таблица investments готова');
-        }
-    });
+        // Таблица для инвестиций
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS investments (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                phone VARCHAR(50) NOT NULL,
+                timestamp VARCHAR(50) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log('✓ Таблица investments готова');
+    } catch (err) {
+        console.error('❌ Ошибка создания таблиц:', err.message);
+    }
 }
 
 // API endpoint для отправки форм
-app.post('/api/submit-form', (req, res) => {
+app.post('/api/submit-form', async (req, res) => {
     const formData = req.body;
     const { type } = formData;
 
@@ -159,56 +130,41 @@ app.post('/api/submit-form', (req, res) => {
             // Сохранение бронирования
             const { bookingType, name, phone, email, checkIn, checkOut, bathhouse, message, timestamp } = formData;
             
-            db.run(
+            const result = await pool.query(
                 `INSERT INTO bookings (type, booking_type, name, phone, email, check_in, check_out, bathhouse, message, timestamp)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [type, bookingType, name, phone, email, checkIn, checkOut, bathhouse ? 1 : 0, message || '', timestamp],
-                function(err) {
-                    if (err) {
-                        console.error('Ошибка сохранения бронирования:', err.message);
-                        console.error('Детали ошибки:', err);
-                        return res.status(500).json({ success: false, error: 'Ошибка сохранения данных: ' + err.message });
-                    }
-                    console.log(`✓ Бронирование сохранено с ID: ${this.lastID}`);
-                    res.json({ success: true, id: this.lastID });
-                }
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                 RETURNING id`,
+                [type, bookingType, name, phone, email, checkIn, checkOut, bathhouse ? 1 : 0, message || '', timestamp]
             );
+            
+            console.log(`✓ Бронирование сохранено с ID: ${result.rows[0].id}`);
+            res.json({ success: true, id: result.rows[0].id });
         } else if (type === 'review') {
             // Сохранение отзыва
             const { name, email, text, timestamp } = formData;
             
-            db.run(
+            const result = await pool.query(
                 `INSERT INTO reviews (name, email, text, timestamp)
-                 VALUES (?, ?, ?, ?)`,
-                [name, email, text, timestamp],
-                function(err) {
-                    if (err) {
-                        console.error('Ошибка сохранения отзыва:', err.message);
-                        console.error('Детали ошибки:', err);
-                        return res.status(500).json({ success: false, error: 'Ошибка сохранения данных: ' + err.message });
-                    }
-                    console.log(`✓ Отзыв сохранен с ID: ${this.lastID}`);
-                    res.json({ success: true, id: this.lastID });
-                }
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING id`,
+                [name, email, text, timestamp]
             );
+            
+            console.log(`✓ Отзыв сохранен с ID: ${result.rows[0].id}`);
+            res.json({ success: true, id: result.rows[0].id });
         } else if (type === 'investment') {
             // Сохранение заявки на инвестиции
             const { name, phone, timestamp } = formData;
             
-            db.run(
+            const result = await pool.query(
                 `INSERT INTO investments (name, phone, timestamp)
-                 VALUES (?, ?, ?)`,
-                [name, phone, timestamp],
-                function(err) {
-                    if (err) {
-                        console.error('Ошибка сохранения заявки на инвестиции:', err.message);
-                        console.error('Детали ошибки:', err);
-                        return res.status(500).json({ success: false, error: 'Ошибка сохранения данных: ' + err.message });
-                    }
-                    console.log(`✓ Заявка на инвестиции сохранена с ID: ${this.lastID}`);
-                    res.json({ success: true, id: this.lastID });
-                }
+                 VALUES ($1, $2, $3)
+                 RETURNING id`,
+                [name, phone, timestamp]
             );
+            
+            console.log(`✓ Заявка на инвестиции сохранена с ID: ${result.rows[0].id}`);
+            res.json({ success: true, id: result.rows[0].id });
         } else {
             console.error('✗ Неизвестный тип формы:', type);
             res.status(400).json({ success: false, error: 'Неизвестный тип формы: ' + type });
@@ -221,40 +177,40 @@ app.post('/api/submit-form', (req, res) => {
 });
 
 // API endpoint для получения всех бронирований (для админки)
-app.get('/api/bookings', (req, res) => {
-    db.all('SELECT * FROM bookings ORDER BY created_at DESC', [], (err, rows) => {
-        if (err) {
-            console.error('Ошибка получения бронирований:', err.message);
-            return res.status(500).json({ success: false, error: 'Ошибка получения данных' });
-        }
-        res.json({ success: true, data: rows });
-    });
+app.get('/api/bookings', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM bookings ORDER BY created_at DESC');
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        console.error('Ошибка получения бронирований:', err.message);
+        res.status(500).json({ success: false, error: 'Ошибка получения данных' });
+    }
 });
 
 // API endpoint для получения всех отзывов
-app.get('/api/reviews', (req, res) => {
-    db.all('SELECT * FROM reviews ORDER BY created_at DESC', [], (err, rows) => {
-        if (err) {
-            console.error('Ошибка получения отзывов:', err.message);
-            return res.status(500).json({ success: false, error: 'Ошибка получения данных' });
-        }
-        res.json({ success: true, data: rows });
-    });
+app.get('/api/reviews', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM reviews ORDER BY created_at DESC');
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        console.error('Ошибка получения отзывов:', err.message);
+        res.status(500).json({ success: false, error: 'Ошибка получения данных' });
+    }
 });
 
 // API endpoint для получения всех заявок на инвестиции
-app.get('/api/investments', (req, res) => {
-    db.all('SELECT * FROM investments ORDER BY created_at DESC', [], (err, rows) => {
-        if (err) {
-            console.error('Ошибка получения заявок на инвестиции:', err.message);
-            return res.status(500).json({ success: false, error: 'Ошибка получения данных' });
-        }
-        res.json({ success: true, data: rows });
-    });
+app.get('/api/investments', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM investments ORDER BY created_at DESC');
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        console.error('Ошибка получения заявок на инвестиции:', err.message);
+        res.status(500).json({ success: false, error: 'Ошибка получения данных' });
+    }
 });
 
 // API endpoint для удаления записи
-app.delete('/api/:type/:id', (req, res) => {
+app.delete('/api/:type/:id', async (req, res) => {
     const { type, id } = req.params;
     let tableName;
     
@@ -265,65 +221,65 @@ app.delete('/api/:type/:id', (req, res) => {
         return res.status(400).json({ success: false, error: 'Неизвестный тип' });
     }
     
-    db.run(`DELETE FROM ${tableName} WHERE id = ?`, [id], function(err) {
-        if (err) {
-            console.error(`Ошибка удаления ${type}:`, err.message);
-            return res.status(500).json({ success: false, error: 'Ошибка удаления данных' });
+    try {
+        const result = await pool.query(`DELETE FROM ${tableName} WHERE id = $1`, [id]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Запись не найдена' });
         }
         console.log(`✓ ${type} удален с ID: ${id}`);
         res.json({ success: true, message: 'Запись удалена' });
-    });
+    } catch (err) {
+        console.error(`Ошибка удаления ${type}:`, err.message);
+        res.status(500).json({ success: false, error: 'Ошибка удаления данных' });
+    }
 });
 
 // API endpoint для обновления записи
-app.put('/api/:type/:id', (req, res) => {
+app.put('/api/:type/:id', async (req, res) => {
     const { type, id } = req.params;
     const data = req.body;
     
     try {
         if (type === 'bookings') {
-            db.run(
+            const result = await pool.query(
                 `UPDATE bookings SET 
-                    booking_type = ?, name = ?, phone = ?, email = ?, 
-                    check_in = ?, check_out = ?, bathhouse = ?, message = ?
-                WHERE id = ?`,
+                    booking_type = $1, name = $2, phone = $3, email = $4, 
+                    check_in = $5, check_out = $6, bathhouse = $7, message = $8
+                WHERE id = $9`,
                 [data.booking_type, data.name, data.phone, data.email, 
-                 data.check_in, data.check_out, data.bathhouse ? 1 : 0, data.message || '', id],
-                function(err) {
-                    if (err) {
-                        console.error('Ошибка обновления бронирования:', err.message);
-                        return res.status(500).json({ success: false, error: 'Ошибка обновления данных' });
-                    }
-                    console.log(`✓ Бронирование обновлено с ID: ${id}`);
-                    res.json({ success: true, message: 'Запись обновлена' });
-                }
+                 data.check_in, data.check_out, data.bathhouse ? 1 : 0, data.message || '', id]
             );
+            
+            if (result.rowCount === 0) {
+                return res.status(404).json({ success: false, error: 'Запись не найдена' });
+            }
+            
+            console.log(`✓ Бронирование обновлено с ID: ${id}`);
+            res.json({ success: true, message: 'Запись обновлена' });
         } else if (type === 'reviews') {
-            db.run(
-                `UPDATE reviews SET name = ?, email = ?, text = ? WHERE id = ?`,
-                [data.name, data.email, data.text, id],
-                function(err) {
-                    if (err) {
-                        console.error('Ошибка обновления отзыва:', err.message);
-                        return res.status(500).json({ success: false, error: 'Ошибка обновления данных' });
-                    }
-                    console.log(`✓ Отзыв обновлен с ID: ${id}`);
-                    res.json({ success: true, message: 'Запись обновлена' });
-                }
+            const result = await pool.query(
+                `UPDATE reviews SET name = $1, email = $2, text = $3 WHERE id = $4`,
+                [data.name, data.email, data.text, id]
             );
+            
+            if (result.rowCount === 0) {
+                return res.status(404).json({ success: false, error: 'Запись не найдена' });
+            }
+            
+            console.log(`✓ Отзыв обновлен с ID: ${id}`);
+            res.json({ success: true, message: 'Запись обновлена' });
         } else if (type === 'investments') {
-            db.run(
-                `UPDATE investments SET name = ?, phone = ? WHERE id = ?`,
-                [data.name, data.phone, id],
-                function(err) {
-                    if (err) {
-                        console.error('Ошибка обновления заявки на инвестиции:', err.message);
-                        return res.status(500).json({ success: false, error: 'Ошибка обновления данных' });
-                    }
-                    console.log(`✓ Заявка на инвестиции обновлена с ID: ${id}`);
-                    res.json({ success: true, message: 'Запись обновлена' });
-                }
+            const result = await pool.query(
+                `UPDATE investments SET name = $1, phone = $2 WHERE id = $3`,
+                [data.name, data.phone, id]
             );
+            
+            if (result.rowCount === 0) {
+                return res.status(404).json({ success: false, error: 'Запись не найдена' });
+            }
+            
+            console.log(`✓ Заявка на инвестиции обновлена с ID: ${id}`);
+            res.json({ success: true, message: 'Запись обновлена' });
         } else {
             res.status(400).json({ success: false, error: 'Неизвестный тип' });
         }
@@ -378,8 +334,8 @@ if (process.env.NODE_ENV === 'production') {
 app.listen(PORT, () => {
     console.log('='.repeat(50));
     console.log(`✓ Сервер запущен на http://localhost:${PORT}`);
-    console.log(`✓ База данных: ${dbPath}`);
-    console.log(`✓ Статические файлы: ${__dirname}`);
+    console.log(`✓ База данных: PostgreSQL`);
+    console.log(`✓ DATABASE_URL: ${process.env.DATABASE_URL ? 'установлен' : 'НЕ УСТАНОВЛЕН!'}`);
     if (process.env.NODE_ENV === 'production') {
         console.log(`✓ Режим: Production`);
         console.log(`✓ Админка защищена (username: ${ADMIN_USERNAME})`);
@@ -389,14 +345,9 @@ app.listen(PORT, () => {
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
-    db.close((err) => {
-        if (err) {
-            console.error('Ошибка закрытия базы данных:', err.message);
-        } else {
-            console.log('База данных закрыта');
-        }
-        process.exit(0);
-    });
+process.on('SIGINT', async () => {
+    console.log('\nЗакрытие соединений...');
+    await pool.end();
+    console.log('База данных закрыта');
+    process.exit(0);
 });
-
