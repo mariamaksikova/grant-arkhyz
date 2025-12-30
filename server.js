@@ -16,6 +16,35 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'start-sales.html'));
 });
 
+// Защита админки (базовая аутентификация)
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'grant2025';
+
+app.get('/admin.html', (req, res, next) => {
+    const auth = req.headers.authorization;
+    
+    if (!auth) {
+        res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
+        return res.status(401).send('Требуется авторизация');
+    }
+    
+    const credentials = Buffer.from(auth.split(' ')[1], 'base64').toString().split(':');
+    const username = credentials[0];
+    const password = credentials[1];
+    
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        next();
+    } else {
+        res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
+        return res.status(401).send('Неверные учетные данные');
+    }
+});
+
+// Ping endpoint для предотвращения засыпания (каждые 5 минут)
+app.get('/ping', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Статические файлы
 app.use(express.static('.'));
 
@@ -194,12 +223,57 @@ app.get('/api/investments', (req, res) => {
     });
 });
 
+// Автоматический ping для предотвращения засыпания (каждые 4 минуты)
+if (process.env.NODE_ENV === 'production') {
+    const SITE_URL = process.env.SITE_URL || 'https://grantarkhyz.onrender.com';
+    const PING_INTERVAL = 4 * 60 * 1000; // 4 минуты
+    
+    function pingSelf() {
+        const https = require('https');
+        const url = new URL(SITE_URL);
+        
+        const options = {
+            hostname: url.hostname,
+            port: 443,
+            path: '/ping',
+            method: 'GET',
+            timeout: 10000
+        };
+
+        const req = https.request(options, (res) => {
+            console.log(`[${new Date().toISOString()}] ✓ Keep-alive ping успешен`);
+        });
+
+        req.on('error', (err) => {
+            console.error(`[${new Date().toISOString()}] ✗ Keep-alive ping ошибка:`, err.message);
+        });
+
+        req.on('timeout', () => {
+            req.destroy();
+        });
+
+        req.end();
+    }
+
+    // Первый ping через 1 минуту после запуска
+    setTimeout(pingSelf, 60 * 1000);
+    
+    // Затем каждые 4 минуты
+    setInterval(pingSelf, PING_INTERVAL);
+    
+    console.log(`✓ Keep-alive активен (ping каждые ${PING_INTERVAL / 1000} секунд)`);
+}
+
 // Запуск сервера
 app.listen(PORT, () => {
     console.log('='.repeat(50));
     console.log(`✓ Сервер запущен на http://localhost:${PORT}`);
     console.log(`✓ База данных: ${dbPath}`);
     console.log(`✓ Статические файлы: ${__dirname}`);
+    if (process.env.NODE_ENV === 'production') {
+        console.log(`✓ Режим: Production`);
+        console.log(`✓ Админка защищена (username: ${ADMIN_USERNAME})`);
+    }
     console.log('='.repeat(50));
     console.log('\nОжидание запросов...\n');
 });
