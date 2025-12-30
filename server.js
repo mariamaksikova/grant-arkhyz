@@ -50,9 +50,9 @@ app.use(express.static('.'));
 
 // Инициализация базы данных
 // Используем персистентный диск для production (Render.com)
-// В production используем /opt/render/project/src/data, в development - текущую директорию
+// В production используем /opt/render/project/src, в development - текущую директорию
 const isProduction = process.env.NODE_ENV === 'production';
-const dbDir = isProduction ? '/opt/render/project/src/data' : __dirname;
+const dbDir = isProduction ? '/opt/render/project/src' : __dirname;
 const dbPath = path.join(dbDir, 'database.db');
 
 // Создаем директорию, если её нет
