@@ -291,7 +291,8 @@
 
         <div id="bookings-content" class="admin-content active">
             <div class="admin-toolbar">
-                <input type="text" id="bookings-search" class="search-box" placeholder="Поиск по имени, телефону, email...">
+                <input type="text" id="bookings-search" class="search-box"
+                    placeholder="Поиск по имени, телефону, email...">
                 <button class="btn-action" onclick="exportToExcel('bookings')">Экспорт в Excel</button>
                 <button class="btn-action" onclick="loadData('bookings')">Обновить</button>
             </div>
@@ -319,7 +320,8 @@
 
         <div id="reviews-content" class="admin-content">
             <div class="admin-toolbar">
-                <input type="text" id="reviews-search" class="search-box" placeholder="Поиск по имени, email, тексту...">
+                <input type="text" id="reviews-search" class="search-box"
+                    placeholder="Поиск по имени, email, тексту...">
                 <button class="btn-action" onclick="exportToExcel('reviews')">Экспорт в Excel</button>
                 <button class="btn-action" onclick="loadData('reviews')">Обновить</button>
             </div>
@@ -374,7 +376,8 @@
                 <div id="modal-form-content"></div>
                 <div class="modal-actions">
                     <button type="button" class="btn-action" onclick="closeEditModal()">Отмена</button>
-                    <button type="submit" class="btn-action" style="background: var(--gold-color); color: white; border-color: var(--gold-color);">Сохранить</button>
+                    <button type="submit" class="btn-action"
+                        style="background: var(--gold-color); color: white; border-color: var(--gold-color);">Сохранить</button>
                 </div>
             </form>
         </div>
@@ -408,7 +411,7 @@
         ['bookings', 'reviews', 'investments'].forEach(type => {
             const searchInput = document.getElementById(type + '-search');
             if (searchInput) {
-                searchInput.addEventListener('input', function() {
+                searchInput.addEventListener('input', function () {
                     filterData(type, this.value);
                 });
             }
@@ -429,11 +432,11 @@
 
             try {
                 const response = await fetch(`/api/${type}`, { credentials: 'include' });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const result = await response.json();
 
                 if (result.success) {
@@ -517,16 +520,16 @@
                 const term = searchTerm.toLowerCase();
                 if (type === 'bookings') {
                     return item.name?.toLowerCase().includes(term) ||
-                           item.phone?.toLowerCase().includes(term) ||
-                           item.email?.toLowerCase().includes(term) ||
-                           item.booking_type?.toLowerCase().includes(term);
+                        item.phone?.toLowerCase().includes(term) ||
+                        item.email?.toLowerCase().includes(term) ||
+                        item.booking_type?.toLowerCase().includes(term);
                 } else if (type === 'reviews') {
                     return item.name?.toLowerCase().includes(term) ||
-                           item.email?.toLowerCase().includes(term) ||
-                           item.text?.toLowerCase().includes(term);
+                        item.email?.toLowerCase().includes(term) ||
+                        item.text?.toLowerCase().includes(term);
                 } else if (type === 'investments') {
                     return item.name?.toLowerCase().includes(term) ||
-                           item.phone?.toLowerCase().includes(term);
+                        item.phone?.toLowerCase().includes(term);
                 }
                 return false;
             });
@@ -763,16 +766,46 @@
         }
 
         // Close modal on outside click
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             const modal = document.getElementById('editModal');
             if (event.target === modal) {
                 closeEditModal();
             }
         }
 
-        // Load initial data
-        document.addEventListener('DOMContentLoaded', function() {
-            loadData('bookings');
+        // Load initial data - сохраняем текущую вкладку
+        document.addEventListener('DOMContentLoaded', function () {
+            // Проверяем, есть ли сохраненная вкладка в localStorage
+            const savedTab = localStorage.getItem('adminCurrentTab') || 'bookings';
+            currentTab = savedTab;
+            
+            // Активируем сохраненную вкладку
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                if (tab.getAttribute('data-tab') === savedTab) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            document.querySelectorAll('.admin-content').forEach(content => {
+                if (content.id === savedTab + '-content') {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+            
+            loadData(savedTab);
+        });
+        
+        // Сохраняем текущую вкладку при переключении
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            const originalClick = tab.onclick;
+            tab.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                localStorage.setItem('adminCurrentTab', tabName);
+            });
         });
     </script>
 </body>
