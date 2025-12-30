@@ -774,9 +774,8 @@ body {
 }
 
 .contacts-wrapper {
-    max-width: 700px;
+    max-width: 1200px;
     margin: 0 auto;
-    text-align: center;
 }
 
 .contacts-wrapper h2 {
@@ -785,6 +784,18 @@ body {
     font-weight: 300;
     letter-spacing: 2px;
     color: var(--gold-color);
+    text-align: center;
+}
+
+.contacts-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+}
+
+.contacts-left {
+    text-align: left;
 }
 
 .contact-info {
@@ -815,19 +826,21 @@ body {
 
 .social-links {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 30px;
 }
 
 .map-container {
-    margin-top: 60px;
     width: 100%;
 }
 
 .map-container h3 {
-    text-align: center;
     color: var(--gold-color);
     margin-bottom: 30px;
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: 1px;
+    text-align: left;
 }
 
 .map-wrapper {
@@ -1720,6 +1733,23 @@ body {
     .about-text h2,
     .contacts-wrapper h2 {
         font-size: 28px;
+    }
+    
+    .contacts-layout {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .contacts-left {
+        text-align: center;
+    }
+    
+    .social-links {
+        justify-content: center;
+    }
+    
+    .map-container h3 {
+        text-align: center;
     }
 
     .card-content,
