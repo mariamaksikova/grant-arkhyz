@@ -50,19 +50,19 @@ app.use(express.static('.'));
 
 // Инициализация базы данных
 // Используем персистентный диск для production (Render.com)
-// На Render.com диск монтируется в /opt/render/project/src
-// Используем подпапку data для базы данных
+// На Render.com диск монтируется в /opt/render/project/src/data
 const isProduction = process.env.NODE_ENV === 'production';
 let dbDir;
 
 if (isProduction) {
+    // Используем путь к персистентному диску
+    const diskPath = '/opt/render/project/src/data';
+    dbDir = diskPath;
+    
     // Проверяем, существует ли путь к диску
-    const diskPath = '/opt/render/project/src';
-    if (fs.existsSync(diskPath)) {
-        dbDir = path.join(diskPath, 'data');
-    } else {
-        // Если диск не найден, используем текущую директорию
-        console.warn('⚠ Персистентный диск не найден, используем текущую директорию');
+    if (!fs.existsSync(diskPath)) {
+        console.warn('⚠ Персистентный диск не найден по пути:', diskPath);
+        console.warn('⚠ Пробуем использовать текущую директорию');
         dbDir = __dirname;
     }
 } else {
