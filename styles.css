@@ -1224,6 +1224,144 @@ body {
     font-weight: 300;
 }
 
+/* Rooms Equipment Section */
+.rooms-equipment-section {
+    background: var(--white);
+}
+
+.rooms-equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    margin-top: 80px;
+    margin-bottom: 80px;
+}
+
+.rooms-equipment-item {
+    text-align: left;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    padding-top: 30px;
+    transition: all 0.3s ease;
+}
+
+.rooms-equipment-image {
+    width: 100%;
+    height: 420px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+.rooms-equipment-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+    filter: grayscale(10%);
+}
+
+.rooms-equipment-item:hover .rooms-equipment-image img {
+    transform: scale(1.05);
+    filter: grayscale(0%);
+}
+
+.rooms-equipment-item:hover {
+    border-top-color: var(--gold-color);
+}
+
+.rooms-equipment-info {
+    margin-top: 0;
+    padding-top: 40px;
+    border-top: 1px solid var(--border-color);
+}
+
+.rooms-equipment-title {
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-color);
+    margin-bottom: 30px;
+    line-height: 1.4;
+}
+
+.rooms-equipment-list-wrapper {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 30px;
+}
+
+.rooms-equipment-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.rooms-equipment-list li {
+    font-size: 13px;
+    color: var(--text-color);
+    font-weight: 300;
+    line-height: 1.6;
+    padding-left: 20px;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.rooms-equipment-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--gold-color);
+    font-size: 18px;
+    line-height: 1;
+}
+
+@media (max-width: 1200px) {
+    .rooms-equipment-image {
+        height: 380px;
+    }
+
+    .rooms-equipment-list-wrapper {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+    }
+}
+
+@media (max-width: 980px) {
+    .rooms-equipment-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+
+    .rooms-equipment-image {
+        height: 340px;
+    }
+
+    .rooms-equipment-list-wrapper {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .rooms-equipment-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .rooms-equipment-image {
+        height: 320px;
+    }
+
+    .rooms-equipment-list-wrapper {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
 /* Why Invest Section - Dark Background */
 .why-invest-section {
     background: var(--bg-dark);
@@ -1558,6 +1696,7 @@ body {
     .cards-grid,
     .houses-grid,
     .infrastructure-grid,
+    .rooms-equipment-grid,
     .why-invest-grid,
     .project-details-grid {
         grid-template-columns: 1fr;
