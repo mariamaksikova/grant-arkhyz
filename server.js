@@ -307,7 +307,7 @@ app.put('/api/:type/:id', async (req, res) => {
 
 // Автоматический ping для предотвращения засыпания (каждые 4 минуты)
 if (process.env.NODE_ENV === 'production') {
-    const SITE_URL = process.env.SITE_URL || 'https://grantarkhyz.onrender.com';
+    const SITE_URL = process.env.SITE_URL || 'https://grantarkhyz.ru';
     const PING_INTERVAL = 4 * 60 * 1000; // 4 минуты
     
     function pingSelf() {

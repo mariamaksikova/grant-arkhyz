@@ -80,7 +80,7 @@ grand-eco-arkhyz/
 ## 🔗 Ссылки
 
 - **GitHub:** https://github.com/mariamaksikova/grant-arkhyz
-- **Сайт:** https://grantarkhyz.onrender.com
+- **Сайт:** https://grantarkhyz.ru
 
 ## 📝 Лицензия
 

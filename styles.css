@@ -289,6 +289,21 @@ body {
     letter-spacing: 0.5px;
 }
 
+/* Investments highlight section */
+.investments-highlight-section {
+    background: linear-gradient(135deg, #2C1810, #4a2d1d);
+    color: #ffffff;
+}
+
+.investments-highlight-title {
+    color: #ffffff;
+}
+
+.investments-highlight-text {
+    color: rgba(255, 255, 255, 0.9);
+    max-width: 760px;
+}
+
 
 /* About Section - Two Column Layout */
 .about-section {
