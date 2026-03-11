@@ -1,6 +1,6 @@
-# 🏔️ Турбаза Grant Arkhyz
+# 🏔️ Эко-отель Grant Eco-Arkhyz
 
-Сайт турбазы Grant Arkhyz с бэкендом на Node.js/Express и PostgreSQL, админ-панелью для управления заявками.
+Сайт эко-отеля Grant Eco-Arkhyz с бэкендом на Node.js/Express и PostgreSQL, админ-панелью для управления заявками.
 
 ## ✨ Возможности
 
@@ -47,7 +47,7 @@ http://localhost:3000/admin.html
 ## 📋 Структура проекта
 
 ```
-grant-arkhyz/
+grand-eco-arkhyz/
 ├── index.html          # Главная страница
 ├── start-sales.html    # Страница старта продаж
 ├── admin.html          # Админ-панель

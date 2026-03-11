@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: grant-arkhyz
+    name: grand-eco-arkhyz
     env: node
     buildCommand: npm install
     startCommand: npm start

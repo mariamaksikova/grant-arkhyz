@@ -1,7 +1,7 @@
 {
-  "name": "grant-arkhyz-backend",
+  "name": "grand-eco-arkhyz-backend",
   "version": "1.0.0",
-  "description": "Backend для сайта Grant Arkhyz",
+  "description": "Backend для сайта Grant Eco-Arkhyz",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

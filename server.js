@@ -44,6 +44,22 @@ app.get('/ping', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// SEO файлы (явно, чтобы не зависеть от cwd/статики на хостинге)
+app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.sendFile(path.join(__dirname, 'robots.txt'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+    res.type('application/xml');
+    res.sendFile(path.join(__dirname, 'sitemap.xml'));
+});
+
+app.get('/favicon.svg', (req, res) => {
+    res.type('image/svg+xml');
+    res.sendFile(path.join(__dirname, 'favicon.svg'));
+});
+
 // Статические файлы
 app.use(express.static('.'));
 
